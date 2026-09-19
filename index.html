@@ -324,22 +324,23 @@ document.getElementById("syncBtn").addEventListener("click",async()=>{
 });
 document.getElementById("downloadAllBtn").addEventListener("click",async()=>{
   const btn=document.getElementById("downloadAllBtn");btn.disabled=true;
-  const N=26;let found=0,failed=0;
-  for(let i=0;i<N;i++){
+  const foundList=[];
+  const total=60; // 前後各掃
+  for(let i=-4;i<56;i++){
     const m=new Date(currentMonday);m.setDate(m.getDate()-7*i);
     const isoM=iso(m);
-    btn.textContent="掃描中… "+(i+1)+"/"+N;
+    btn.textContent="掃描中… ("+foundList.length+" 筆)";
     try{
       const r=await fetch(GS_URL+"?monday="+encodeURIComponent(isoM));
       const t=await r.text();let data=null;try{data=JSON.parse(t);}catch(e){}
       if(data&&data.cells&&Object.keys(data.cells).length>0){
         localStorage.setItem("pd_"+(localStorage.getItem("pd_user")||"")+"_"+isoM,JSON.stringify(data));
-        found++;
+        foundList.push(isoM);
       }
-    }catch(e){failed++;}
+    }catch(e){}
   }
   btn.disabled=false;btn.textContent="📂 載入全部週";
-  alert("掃描最近 "+N+" 週，找到 "+found+" 週資料"+(failed?"（"+failed+" 筆讀取失敗）":"")+"。切換左上角週一日期即可看到。");
+  alert("找到 "+foundList.length+" 週資料：\n"+foundList.join("\n")+"\n\n切換左上角週一日期即可看到。");
 });
 weekStartInput.addEventListener("change",()=>{const v=weekStartInput.value;if(!v)return;currentMonday=mondayOf(new Date(v+"T00:00:00"));buildAll();});
 
