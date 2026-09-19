@@ -19,6 +19,8 @@
   .toolbar{display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;background:var(--canvas);border:1px solid var(--hairline);border-radius:var(--r-lg);padding:14px 18px;margin-bottom:18px}
   .toolbar label{font-size:14px;color:var(--ink)}
   .toolbar input[type=date],.toolbar input[type=text]{padding:6px 10px;font-size:14px;border:1px solid var(--hairline);border-radius:var(--r-sm);background:var(--canvas);color:var(--ink)}
+  .toolbar label button{padding:6px 10px;font-size:14px;border:1px solid var(--hairline);border-radius:var(--r-sm);background:var(--canvas);color:var(--ink);cursor:pointer}
+  .toolbar label button:hover{background:var(--surface-soft)}
   .biz{font-size:14px;display:flex;align-items:center;gap:6px;color:var(--ink)}
   .biz select{padding:6px 8px;font-size:14px;border:1px solid var(--hairline);border-radius:var(--r-sm);background:var(--canvas);color:var(--ink)}
   .cross-toggle{padding:6px 16px;font-size:14px;font-weight:500;border-radius:999px;cursor:pointer;border:1px solid var(--hairline);background:var(--canvas);color:var(--muted);margin-left:8px}
@@ -91,7 +93,7 @@
 
 <div id="userView">
 <div class="toolbar">
-  <label>本週週一日期：<input type="date" id="weekStart"></label>
+  <label>查看日期：<button type="button" id="prevWeek">◀</button><input type="date" id="weekStart"><button type="button" id="nextWeek">▶</button></label>
   <span class="biz">營業時間：<select id="bizStart"></select> – <select id="bizEnd"></select><button type="button" id="bizCrossBtn" class="cross-toggle">不跨日</button></span>
   <span class="summary">工作時數：<b id="workHours">0</b> hr　總工資：<b id="totalWage">0</b> 元</span>
 </div>
@@ -364,7 +366,10 @@ weekStartInput.addEventListener("change",()=>{const v=weekStartInput.value;if(!v
   const now=new Date();const mon=mondayOf(now);weekStartInput.value=iso(mon);currentMonday=mon;
   buildAll();
   autoDownload(true);
-  weekStartInput.addEventListener("change",()=>{const v=weekStartInput.value;if(!v)return;clearTimeout(autoUploadTimer);currentMonday=mondayOf(new Date(v+"T00:00:00"));cloudState={cells:{},manual:{},meta:{}};bizStart=0;bizEnd=24;bizCross=false;const bs=document.getElementById("bizStart"),be=document.getElementById("bizEnd"),bc=document.getElementById("bizCrossBtn");bs.value=0;be.value=24;bc.textContent="不跨日";bc.classList.remove("on");buildAll();autoDownload(true);});
+  function switchWeek(deltaDays){const d=new Date(currentMonday);d.setDate(d.getDate()+deltaDays);clearTimeout(autoUploadTimer);currentMonday=mondayOf(d);weekStartInput.value=iso(currentMonday);cloudState={cells:{},manual:{},meta:{}};bizStart=0;bizEnd=24;bizCross=false;const bs=document.getElementById("bizStart"),be=document.getElementById("bizEnd"),bc=document.getElementById("bizCrossBtn");bs.value=0;be.value=24;bc.textContent="不跨日";bc.classList.remove("on");buildAll();autoDownload(true);}
+  weekStartInput.addEventListener("change",()=>{const v=weekStartInput.value;if(!v)return;switchWeek((mondayOf(new Date(v+"T00:00:00"))-currentMonday)/(86400000));});
+  document.getElementById("prevWeek").addEventListener("click",()=>switchWeek(-7));
+  document.getElementById("nextWeek").addEventListener("click",()=>switchWeek(7));
   window.addEventListener("resize",()=>buildAll());
 })();
 </script>
