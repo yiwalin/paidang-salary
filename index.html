@@ -81,6 +81,7 @@
   <div class="topbar-actions">
     <button type="button" id="uploadWeekBtn" class="sync-btn upload-btn">📤 上傳本週</button>
     <button type="button" id="downloadWeekBtn" class="sync-btn download-btn">⬇ 載入本週</button>
+    <button type="button" id="downloadAllBtn" class="sync-btn download-btn">📂 載入全部週</button>
     <button type="button" id="syncBtn" class="sync-btn">☁ 同步到暫存</button>
   </div>
 </div>
@@ -315,6 +316,25 @@ document.getElementById("syncBtn").addEventListener("click",async()=>{
   const btn=document.getElementById("syncBtn");btn.disabled=true;btn.textContent="同步中…";
   await post(buildSummaryRow());
   setTimeout(()=>{btn.disabled=false;btn.textContent="☁ 同步到暫存";alert("已同步到暫存。");},1000);
+});
+document.getElementById("downloadAllBtn").addEventListener("click",async()=>{
+  const btn=document.getElementById("downloadAllBtn");btn.disabled=true;
+  const N=26;let found=0,failed=0;
+  for(let i=0;i<N;i++){
+    const m=new Date(currentMonday);m.setDate(m.getDate()-7*i);
+    const isoM=iso(m);
+    btn.textContent="掃描中… "+(i+1)+"/"+N;
+    try{
+      const r=await fetch(GS_URL+"?monday="+encodeURIComponent(isoM));
+      const t=await r.text();let data=null;try{data=JSON.parse(t);}catch(e){}
+      if(data&&data.cells&&Object.keys(data.cells).length>0){
+        localStorage.setItem("pd_"+(localStorage.getItem("pd_user")||"")+"_"+isoM,JSON.stringify(data));
+        found++;
+      }
+    }catch(e){failed++;}
+  }
+  btn.disabled=false;btn.textContent="📂 載入全部週";
+  alert("掃描最近 "+N+" 週，找到 "+found+" 週資料"+(failed?"（"+failed+" 筆讀取失敗）":"")+"。切換左上角週一日期即可看到。");
 });
 weekStartInput.addEventListener("change",()=>{const v=weekStartInput.value;if(!v)return;currentMonday=mondayOf(new Date(v+"T00:00:00"));buildAll();});
 
