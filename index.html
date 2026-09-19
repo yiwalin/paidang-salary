@@ -283,7 +283,7 @@ async function autoDownload(silent){
     const t=await r.text();let data=null;try{data=JSON.parse(t);}catch(e){}
     if(data&&data.cells){
       const localTs=(cloudState&&cloudState._ts)||0;
-      if((data._ts||0)>localTs){
+      if(((data._ts||1))>localTs){
         cloudState=data;applyState(data);recompute();renderTaskList();
         try{localStorage.setItem(localStorageKey(),JSON.stringify(data));}catch(e){}
         if(!silent)alert("已自動同步最新資料。");
