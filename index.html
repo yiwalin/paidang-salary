@@ -278,14 +278,17 @@ function onEdit(){const s=buildState();s._ts=Date.now();try{localStorage.setItem
 let autoUploadTimer=null;
 function scheduleAutoUpload(){clearTimeout(autoUploadTimer);autoUploadTimer=setTimeout(autoUpload,2000);}
 function autoUpload(){
+  if(suppressAutoUpload)return;
   const s=buildState();s._ts=Date.now();
   const sheetName=iso(currentMonday).replaceAll("-","");
   post({action:"uploadWeek",sheetName:sheetName,monday:iso(currentMonday),compact:JSON.stringify(s),grid:buildWeekGrid()});
 }
 async function autoDownload(silent){
+  const reqMonday=iso(currentMonday);
   try{
-    const r=await fetch(GS_URL+"?monday="+encodeURIComponent(iso(currentMonday)));
+    const r=await fetch(GS_URL+"?monday="+encodeURIComponent(reqMonday));
     const t=await r.text();let data=null;try{data=JSON.parse(t);}catch(e){}
+    if(iso(currentMonday)!==reqMonday)return;
     if(data&&data.cells){
       const localTs=(cloudState&&cloudState._ts)||0;
       if(((data._ts||1))>localTs){
