@@ -263,12 +263,13 @@ function recompute(){
 }
 function buildState(){const s={cells:{},manual:{}};if(cloudState&&cloudState.cells)Object.assign(s.cells,cloudState.cells);if(cloudState&&cloudState.manual)Object.assign(s.manual,cloudState.manual);document.querySelectorAll(".cellbox").forEach(b=>{s.cells[`${b.dataset.day}_${b.dataset.slot}_${b.dataset.cat}`]=cellGet(b);});
   weekCols.forEach(c=>{const el=document.getElementById(`sal-w-${c.id}`);if(el)s.manual[`sal-w-${c.id}`]=el.value;const d=document.getElementById(`detail-w-${c.id}`);if(d)s.manual[`detail-w-${c.id}`]=d.textContent;});
-  const n=document.getElementById("weekNote");if(n)s.manual["note"]=n.value;const ch=document.getElementById("cnt-charm");if(ch)s.manual["charm"]=ch.value;s.manual["tasks"]=taskChecks;return s;}
+  const n=document.getElementById("weekNote");if(n)s.manual["note"]=n.value;const ch=document.getElementById("cnt-charm");if(ch)s.manual["charm"]=ch.value;s.manual["tasks"]=taskChecks;s.meta={bizStart:bizStart,bizEnd:bizEnd,bizCross:bizCross};return s;}
 function saveState(){try{localStorage.setItem(localStorageKey(),JSON.stringify(buildState()));}catch(e){}}
 function localStorageKey(){return "pd_"+localStorage.getItem("pd_user")+"_"+iso(currentMonday);}
 function applyState(state){if(!state)return;document.querySelectorAll(".cellbox").forEach(b=>{const k=`${b.dataset.day}_${b.dataset.slot}_${b.dataset.cat}`;if(state.cells&&state.cells[k]!==undefined)cellSet(b,state.cells[k]);});
   if(state.manual){weekCols.forEach(c=>{const el=document.getElementById(`sal-w-${c.id}`);if(el&&state.manual[`sal-w-${c.id}`]!==undefined)el.value=state.manual[`sal-w-${c.id}`];const d=document.getElementById(`detail-w-${c.id}`);if(d&&state.manual[`detail-w-${c.id}`]!==undefined)d.textContent=state.manual[`detail-w-${c.id}`];});
-    const n=document.getElementById("weekNote");if(n&&state.manual["note"]!==undefined)n.value=state.manual["note"];const ch=document.getElementById("cnt-charm");if(ch&&state.manual["charm"]!==undefined)ch.value=state.manual["charm"];if(Array.isArray(state.manual["tasks"]))taskChecks=state.manual["tasks"].slice(0,TASKS.length);}}
+    const n=document.getElementById("weekNote");if(n&&state.manual["note"]!==undefined)n.value=state.manual["note"];const ch=document.getElementById("cnt-charm");if(ch&&state.manual["charm"]!==undefined)ch.value=state.manual["charm"];if(Array.isArray(state.manual["tasks"]))taskChecks=state.manual["tasks"].slice(0,TASKS.length);}
+  if(state.meta){bizStart=state.meta.bizStart??bizStart;bizEnd=state.meta.bizEnd??bizEnd;bizCross=!!state.meta.bizCross;const bs=document.getElementById("bizStart"),be=document.getElementById("bizEnd"),bc=document.getElementById("bizCrossBtn");if(bs)bs.value=bizStart;if(be)be.value=bizEnd;if(bc){bc.textContent=bizCross?"跨日":"不跨日";bc.classList.toggle("on",bizCross);}}}
 function onEdit(){const s=buildState();s._ts=Date.now();try{localStorage.setItem(localStorageKey(),JSON.stringify(s));}catch(e){}cloudState=s;recompute();scheduleAutoUpload();}
 let autoUploadTimer=null;
 function scheduleAutoUpload(){clearTimeout(autoUploadTimer);autoUploadTimer=setTimeout(autoUpload,2000);}
@@ -351,7 +352,7 @@ weekStartInput.addEventListener("change",()=>{const v=weekStartInput.value;if(!v
   for(let h=0;h<24;h++)bs.insertAdjacentHTML("beforeend",`<option value="${h}">${pad2(h)}</option>`);
   for(let h=1;h<=24;h++)be.insertAdjacentHTML("beforeend",`<option value="${h}">${pad2(h)}</option>`);
   bs.value=bizStart;be.value=bizEnd;bc.textContent=bizCross?"跨日":"不跨日";bc.classList.toggle("on",bizCross);
-  function chg(){buildAll();}
+  function chg(){buildAll();onEdit();}
   bs.addEventListener("change",()=>{bizStart=+bs.value;chg();});be.addEventListener("change",()=>{bizEnd=+be.value;chg();});
   bc.addEventListener("click",()=>{bizCross=!bizCross;bc.textContent=bizCross?"跨日":"不跨日";bc.classList.toggle("on",bizCross);chg();});
 })();
