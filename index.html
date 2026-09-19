@@ -278,6 +278,22 @@ function buildSummaryRow(){
   row["工作時數"]=q("#workHours");row["總工資"]=q("#totalWage");row["備註"]=qi("#weekNote");
   return row;
 }
+function buildWeekGrid(){
+  const g=[];
+  const q=s=>{const el=document.querySelector(s);return el?el.textContent.trim():"";};
+  const qi=s=>{const el=document.querySelector(s);return el?el.value.trim():"";};
+  g.push(["排檔薪資表  週一", iso(currentMonday)]);
+  g.push([]);
+  g.push(["項目","計數","薪水"]);
+  columns.forEach(c=>{g.push([c.name,q(`#cnt-${c.id}`),q(`#sal-${c.id}`)]);});
+  g.push([]);
+  weekCols.forEach(c=>{g.push([c.name,"",qi(`#sal-w-${c.id}`)]);});
+  g.push([]);
+  g.push(["工作時數",q("#workHours")]);
+  g.push(["總工資",q("#totalWage")]);
+  g.push(["備註",qi("#weekNote")]);
+  return g;
+}
 document.getElementById("uploadWeekBtn").addEventListener("click",async()=>{
   const sheetName=iso(currentMonday).replaceAll("-","");
   if(!confirm("將上傳本週完整記錄到「"+sheetName+"」，若已存在會覆蓋。繼續？"))return;
