@@ -353,7 +353,7 @@ weekStartInput.addEventListener("change",()=>{const v=weekStartInput.value;if(!v
   for(let h=0;h<24;h++)bs.insertAdjacentHTML("beforeend",`<option value="${h}">${pad2(h)}</option>`);
   for(let h=1;h<=24;h++)be.insertAdjacentHTML("beforeend",`<option value="${h}">${pad2(h)}</option>`);
   bs.value=bizStart;be.value=bizEnd;bc.textContent=bizCross?"跨日":"不跨日";bc.classList.toggle("on",bizCross);
-  function chg(){buildAll();onEdit();}
+  function chg(){const s=buildState();s.meta={bizStart:bizStart,bizEnd:bizEnd,bizCross:bizCross};cloudState=s;try{localStorage.setItem(localStorageKey(),JSON.stringify(s));}catch(e){}buildAll();}
   bs.addEventListener("change",()=>{bizStart=+bs.value;chg();});be.addEventListener("change",()=>{bizEnd=+be.value;chg();});
   bc.addEventListener("click",()=>{bizCross=!bizCross;bc.textContent=bizCross?"跨日":"不跨日";bc.classList.toggle("on",bizCross);chg();});
 })();
