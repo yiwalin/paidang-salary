@@ -364,7 +364,7 @@ weekStartInput.addEventListener("change",()=>{const v=weekStartInput.value;if(!v
   const now=new Date();const mon=mondayOf(now);weekStartInput.value=iso(mon);currentMonday=mon;
   buildAll();
   autoDownload(true);
-  weekStartInput.addEventListener("change",()=>{const v=weekStartInput.value;if(!v)return;clearTimeout(autoUploadTimer);currentMonday=mondayOf(new Date(v+"T00:00:00"));cloudState={cells:{},manual:{},meta:{}};buildAll();autoDownload(true);});
+  weekStartInput.addEventListener("change",()=>{const v=weekStartInput.value;if(!v)return;clearTimeout(autoUploadTimer);currentMonday=mondayOf(new Date(v+"T00:00:00"));cloudState={cells:{},manual:{},meta:{}};bizStart=0;bizEnd=24;bizCross=false;const bs=document.getElementById("bizStart"),be=document.getElementById("bizEnd"),bc=document.getElementById("bizCrossBtn");bs.value=0;be.value=24;bc.textContent="不跨日";bc.classList.remove("on");buildAll();autoDownload(true);});
   window.addEventListener("resize",()=>buildAll());
 })();
 </script>
