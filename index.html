@@ -81,12 +81,12 @@
   <div class="topbar-actions">
     <button type="button" id="uploadWeekBtn" class="sync-btn upload-btn">📤 上傳本週</button>
     <button type="button" id="downloadWeekBtn" class="sync-btn download-btn">⬇ 載入本週</button>
+    <button type="button" id="syncBtn" class="sync-btn">☁ 同步到暫存</button>
   </div>
 </div>
 
 <div id="userView">
 <div class="toolbar">
-  <label>我的名字：<input type="text" id="userName" placeholder="輸入名字"></label>
   <label>本週週一日期：<input type="date" id="weekStart"></label>
   <span class="biz">營業時間：<select id="bizStart"></select> – <select id="bizEnd"></select><button type="button" id="bizCrossBtn" class="cross-toggle">不跨日</button></span>
   <span class="summary">工作時數：<b id="workHours">0</b> hr　總工資：<b id="totalWage">0</b> 元</span>
@@ -126,7 +126,7 @@
 
 <script>
 /* ============ 請把你的 Apps Script Web App URL 填在這裡 ============ */
-const GS_URL = "https://script.google.com/macros/s/AKfycb範例/exec";
+const GS_URL = "https://script.google.com/macros/s/AKfycbx-6IVPLmzIzF2TOO9w_iNqC0_RYvBXS0X0AL-SD0ZNUtfzyT38usC1NbA2o45xnvythQ/exec";
 /* ============================================================ */
 
 const DEFAULT_COLS = [
@@ -269,23 +269,35 @@ function buildAll(){buildDailyTable(currentMonday);buildWeekTable();renderTaskLi
 
 /* ============ Apps Script 同步 ============ */
 function post(payload){return fetch(GS_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)}).then(()=>({ok:true})).catch(e=>({ok:false,e}));}
+function buildSummaryRow(){
+  const q=s=>{const el=document.querySelector(s);return el?el.textContent.trim():"";};
+  const qi=s=>{const el=document.querySelector(s);return el?el.value.trim():"";};
+  const row={"時間":new Date().toLocaleString("zh-TW"),"週一日期":iso(currentMonday)};
+  columns.forEach(c=>{row[c.name+" 計數"]=q(`#cnt-${c.id}`);row[c.name+" 薪水"]=q(`#sal-${c.id}`);});
+  weekCols.forEach(c=>{row[c.name]=qi(`#sal-w-${c.id}`);});
+  row["工作時數"]=q("#workHours");row["總工資"]=q("#totalWage");row["備註"]=qi("#weekNote");
+  return row;
+}
 document.getElementById("uploadWeekBtn").addEventListener("click",async()=>{
-  const name=(document.getElementById("userName").value||"").trim();
-  if(!name){alert("請先輸入你的名字。");return;}
-  localStorage.setItem("pd_user",name);
+  const sheetName=iso(currentMonday).replaceAll("-","");
+  if(!confirm("將上傳本週完整記錄到「"+sheetName+"」，若已存在會覆蓋。繼續？"))return;
   const btn=document.getElementById("uploadWeekBtn");btn.disabled=true;btn.textContent="上傳中…";
-  await post({action:"saveWeek",monday:iso(currentMonday),user:name,compact:JSON.stringify(buildState())});
-  setTimeout(()=>{btn.disabled=false;btn.textContent="📤 上傳本週";alert("已上傳 "+name+" 的 "+iso(currentMonday)+" 資料。");},1000);
+  await post({action:"uploadWeek",sheetName:sheetName,monday:iso(currentMonday),compact:JSON.stringify(buildState()),grid:buildWeekGrid()});
+  setTimeout(()=>{btn.disabled=false;btn.textContent="📤 上傳本週";alert("已送出。");},1000);
 });
 document.getElementById("downloadWeekBtn").addEventListener("click",async()=>{
-  const name=(document.getElementById("userName").value||"").trim();
-  if(!name){alert("請先輸入你的名字。");return;}
-  localStorage.setItem("pd_user",name);
   const btn=document.getElementById("downloadWeekBtn");btn.disabled=true;btn.textContent="載入中…";
-  try{const resp=await fetch(GS_URL+"?monday="+encodeURIComponent(iso(currentMonday))+"&user="+encodeURIComponent(name));const txt=await resp.text();let data=null;try{data=JSON.parse(txt);}catch(e){}
-    if(!data||!data.cells){alert("找不到 "+name+" 的 "+iso(currentMonday)+" 資料。");}else{applyState(data);saveState();recompute();renderTaskList();alert("已載入 "+name+" 的資料。");}}
-  catch(e){alert("載入失敗："+e.message);}
+  try{
+    const resp=await fetch(GS_URL+"?monday="+encodeURIComponent(iso(currentMonday)));
+    const txt=await resp.text();let data=null;try{data=JSON.parse(txt);}catch(e){}
+    if(!data||!data.cells){alert("找不到本週資料。");}else{applyState(data);saveState();recompute();renderTaskList();alert("已載入本週資料。");}
+  }catch(e){alert("載入失敗："+e.message);}
   btn.disabled=false;btn.textContent="⬇ 載入本週";
+});
+document.getElementById("syncBtn").addEventListener("click",async()=>{
+  const btn=document.getElementById("syncBtn");btn.disabled=true;btn.textContent="同步中…";
+  await post(buildSummaryRow());
+  setTimeout(()=>{btn.disabled=false;btn.textContent="☁ 同步到暫存";alert("已同步到暫存。");},1000);
 });
 weekStartInput.addEventListener("change",()=>{const v=weekStartInput.value;if(!v)return;currentMonday=mondayOf(new Date(v+"T00:00:00"));buildAll();});
 
@@ -301,17 +313,7 @@ weekStartInput.addEventListener("change",()=>{const v=weekStartInput.value;if(!v
 })();
 
 /* ============ 開啟：讀 config ============ */
-(async function init(){
-  const savedUser=localStorage.getItem("pd_user")||"";
-  document.getElementById("userName").value=savedUser;
-  try{
-    const resp=await fetch(GS_URL+"?action=config");
-    const cfg=await resp.json();
-    if(cfg.columns)columns=cfg.columns;
-    if(cfg.weekCols)weekCols=cfg.weekCols;
-    if(cfg.RULES)RULES=Object.assign(JSON.parse(JSON.stringify(DEFAULT_RULES)),cfg.RULES);
-    if(cfg.biz){bizStart=+cfg.biz.start||0;bizEnd=+cfg.biz.end||24;bizCross=!!cfg.biz.cross;}
-  }catch(e){console.warn("讀取設定失敗，使用預設",e);}
+(function init(){
   document.getElementById("loading").style.display="none";
   const now=new Date();const mon=mondayOf(now);weekStartInput.value=iso(mon);currentMonday=mon;
   buildAll();
