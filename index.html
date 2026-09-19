@@ -345,7 +345,7 @@ document.getElementById("syncBtn").addEventListener("click",async()=>{
   await post(buildSummaryRow());
   setTimeout(()=>{btn.disabled=false;btn.textContent="☁ 同步到暫存";alert("已同步到暫存。");},1000);
 });
-weekStartInput.addEventListener("change",()=>{const v=weekStartInput.value;if(!v)return;currentMonday=mondayOf(new Date(v+"T00:00:00"));buildAll();});
+weekStartInput.addEventListener("change",()=>{const v=weekStartInput.value;if(!v)return;currentMonday=mondayOf(new Date(v+"T00:00:00"));buildAll();scheduleAutoUpload();});
 
 /* ============ 營業時間 ============ */
 (function(){
@@ -353,7 +353,7 @@ weekStartInput.addEventListener("change",()=>{const v=weekStartInput.value;if(!v
   for(let h=0;h<24;h++)bs.insertAdjacentHTML("beforeend",`<option value="${h}">${pad2(h)}</option>`);
   for(let h=1;h<=24;h++)be.insertAdjacentHTML("beforeend",`<option value="${h}">${pad2(h)}</option>`);
   bs.value=bizStart;be.value=bizEnd;bc.textContent=bizCross?"跨日":"不跨日";bc.classList.toggle("on",bizCross);
-  function chg(){const s=buildState();s.meta={bizStart:bizStart,bizEnd:bizEnd,bizCross:bizCross};cloudState=s;try{localStorage.setItem(localStorageKey(),JSON.stringify(s));}catch(e){}buildAll();}
+  function chg(){const s=buildState();s.meta={bizStart:bizStart,bizEnd:bizEnd,bizCross:bizCross};s._ts=Date.now();cloudState=s;try{localStorage.setItem(localStorageKey(),JSON.stringify(s));}catch(e){}buildAll();scheduleAutoUpload();}
   bs.addEventListener("change",()=>{bizStart=+bs.value;chg();});be.addEventListener("change",()=>{bizEnd=+be.value;chg();});
   bc.addEventListener("click",()=>{bizCross=!bizCross;bc.textContent=bizCross?"跨日":"不跨日";bc.classList.toggle("on",bizCross);chg();});
 })();
