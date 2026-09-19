@@ -73,6 +73,10 @@
   .usage-title{font-weight:500;font-size:16px;margin-bottom:8px;color:var(--ink)}
   .usage ul{margin:0;padding-left:20px}.usage li{margin:4px 0;color:var(--body)}.usage b{color:var(--ink)}
   .loading{text-align:center;padding:40px;color:var(--muted)}
+  .mobile-day-table{width:100%;table-layout:fixed;margin-bottom:10px}
+  .mobile-day-table .cellbox{min-height:22px;font-size:12px}
+  .mobile-day-table .time-label{font-size:11px;width:44px}
+  .mobile-day-table .cat-head{font-size:11px}
 </style>
 </head>
 <body>
@@ -168,6 +172,27 @@ function isMobile(){return window.matchMedia&&window.matchMedia("(max-width:900p
 
 function buildDailyTable(monday){
   currentMonday=monday;const days=[];for(let i=0;i<7;i++){const d=new Date(monday);d.setDate(monday.getDate()+i);days.push(d);}currentDays=days;
+  visibleRows=computeVisibleRows();hourRowMap={};visibleRows.forEach((h,i)=>hourRowMap[h]=i);
+  const wrap=dailyTable.parentElement;
+  if(isMobile()){
+    // 手機：每天一張小表直向堆疊
+    wrap.querySelectorAll(".mobile-day-table").forEach(t=>t.remove());
+    dailyTable.style.display="none";
+    for(let di=0;di<7;di++){
+      const d=days[di];
+      let html=`<div class="panel-title">${d.getFullYear()}/${fmt(d)} ${WEEKTXT[d.getDay()]}</div><table class="mobile-day-table" data-day="${di}"><thead><tr><th class="row-label" style="width:44px">時間</th>`;
+      columns.forEach(c=>{html+=`<th class="cat-head">${c.name}</th>`;});
+      html+="</tr></thead><tbody>";
+      visibleRows.forEach(h=>{const slot=pad2(h)+"-"+(h===23?"24":pad2(h+1));html+=`<tr><td class="time-label" data-slot="${h}">${slot}</td>`;
+        columns.forEach(c=>{if(c.type==="chk")html+=`<td class='cell'><input type="checkbox" class="cellbox cell-chk" data-day="${di}" data-slot="${h}" data-cat="${c.id}"></td>`;else html+=`<td class='cell'><div class="cellbox" contenteditable="true" data-day="${di}" data-slot="${h}" data-cat="${c.id}"></div></td>`;});
+        html+="</tr>";});
+      html+="</tbody></table>";
+      wrap.insertAdjacentHTML("beforeend",html);
+    }
+    return;
+  }
+  dailyTable.style.display="";
+  wrap.querySelectorAll(".mobile-day-table").forEach(t=>t.remove());
   const dayIdxList=[0,1,2,3,4,5,6];
   let html="<thead><tr><th class='row-label' rowspan='2' style='width:52px'>日期</th>";
   dayIdxList.forEach(di=>{const d=days[di];html+=`<th class='day-head' data-day='${di}' colspan='${columns.length}'>${d.getFullYear()}/${fmt(d)} ${WEEKTXT[d.getDay()]}</th>`;});
@@ -175,7 +200,6 @@ function buildDailyTable(monday){
   html+="</tr><tr><th class='row-label'>總計</th>";
   dayIdxList.forEach(di=>{columns.forEach(c=>{html+=`<td class='day-total' data-day='${di}' id='dt-${di}-${c.id}'></td>`;});});
   html+="</tr></thead><tbody>";
-  visibleRows=computeVisibleRows();hourRowMap={};visibleRows.forEach((h,i)=>hourRowMap[h]=i);
   visibleRows.forEach(h=>{const slot=pad2(h)+"-"+(h===23?"24":pad2(h+1));html+=`<tr><td class='time-label' data-slot='${h}'>${slot}</td>`;
     dayIdxList.forEach(di=>{columns.forEach(c=>{if(c.type==="chk")html+=`<td class='cell'><input type="checkbox" class="cellbox cell-chk" data-day="${di}" data-slot="${h}" data-cat="${c.id}"></td>`;else html+=`<td class='cell'><div class="cellbox" contenteditable="true" data-day="${di}" data-slot="${h}" data-cat="${c.id}"></div></td>`;});});
     html+="</tr>";});
