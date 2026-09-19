@@ -261,6 +261,7 @@ function recompute(){
   document.getElementById("workHours").textContent=hours;
   document.querySelectorAll(".cellbox").forEach(b=>b.classList.toggle("filled",cellGet(b)!==""));
 }
+function applyMeta(state){if(!state||!state.meta)return;const m=state.meta;bizStart=m.bizStart??bizStart;bizEnd=m.bizEnd??bizEnd;bizCross=!!m.bizCross;const bs=document.getElementById("bizStart"),be=document.getElementById("bizEnd"),bc=document.getElementById("bizCrossBtn");if(bs)bs.value=bizStart;if(be)be.value=bizEnd;if(bc){bc.textContent=bizCross?"跨日":"不跨日";bc.classList.toggle("on",bizCross);}}
 function buildState(){const s={cells:{},manual:{}};if(cloudState&&cloudState.cells)Object.assign(s.cells,cloudState.cells);if(cloudState&&cloudState.manual)Object.assign(s.manual,cloudState.manual);document.querySelectorAll(".cellbox").forEach(b=>{s.cells[`${b.dataset.day}_${b.dataset.slot}_${b.dataset.cat}`]=cellGet(b);});
   weekCols.forEach(c=>{const el=document.getElementById(`sal-w-${c.id}`);if(el)s.manual[`sal-w-${c.id}`]=el.value;const d=document.getElementById(`detail-w-${c.id}`);if(d)s.manual[`detail-w-${c.id}`]=d.textContent;});
   const n=document.getElementById("weekNote");if(n)s.manual["note"]=n.value;const ch=document.getElementById("cnt-charm");if(ch)s.manual["charm"]=ch.value;s.manual["tasks"]=taskChecks;s.meta={bizStart:bizStart,bizEnd:bizEnd,bizCross:bizCross};return s;}
@@ -294,7 +295,7 @@ async function autoDownload(silent){
 }
 setInterval(()=>autoDownload(true),10000);
 function setDayExpand(openDay){const nav=document.getElementById("dayNav");if(!nav)return;nav.innerHTML="";const WD=["日","一","二","三","四","五","六"];const active=isMobile()?mobileDay:openDay;for(let di=0;di<7;di++){const d=currentDays[di];const b=document.createElement("button");if(isMobile()&&di===active)b.classList.add("active");b.innerHTML=`<b>${fmt(d)}</b>${WD[d.getDay()]}`;b.addEventListener("click",()=>{mobileDay=di;buildAll(currentMonday);});nav.appendChild(b);}}
-function buildAll(){buildDailyTable(currentMonday);buildWeekTable();renderTaskList();bindEvents();try{const raw=localStorage.getItem(localStorageKey());if(raw){cloudState=JSON.parse(raw);applyState(cloudState);}}catch(e){}recompute();setDayExpand(0);sel={r1:0,c1:0,r2:0,c2:0};paintSel();}
+function buildAll(){try{const raw=localStorage.getItem(localStorageKey());if(raw){cloudState=JSON.parse(raw);applyMeta(cloudState);}}catch(e){}buildDailyTable(currentMonday);buildWeekTable();renderTaskList();bindEvents();try{if(cloudState)applyState(cloudState);}catch(e){}recompute();setDayExpand(0);sel={r1:0,c1:0,r2:0,c2:0};paintSel();}
 
 /* ============ Apps Script 同步 ============ */
 function post(payload){return fetch(GS_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)}).then(()=>({ok:true})).catch(e=>({ok:false,e}));}
