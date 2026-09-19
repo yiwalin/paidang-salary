@@ -363,6 +363,7 @@ weekStartInput.addEventListener("change",()=>{const v=weekStartInput.value;if(!v
   const now=new Date();const mon=mondayOf(now);weekStartInput.value=iso(mon);currentMonday=mon;
   buildAll();
   autoDownload(true);
+  weekStartInput.addEventListener("change",()=>{const v=weekStartInput.value;if(!v)return;clearTimeout(autoUploadTimer);currentMonday=mondayOf(new Date(v+"T00:00:00"));cloudState={cells:{},manual:{},meta:{}};buildAll();autoDownload(true);});
   window.addEventListener("resize",()=>buildAll());
 })();
 </script>
